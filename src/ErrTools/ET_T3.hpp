@@ -457,17 +457,31 @@ namespace ET {
         return 0;
     }
     
-    void HeartBeatThread(const string& URL, atomic<bool>& stopFlag) {
+    void HeartBeatThread(atomic<bool>& stopFlag) {
+        string URL, 参数, 签名, 时间戳;
         while (stopFlag.load()) {
+            时间戳 = TimeStamp();
+            if (请求值加密)
+            {
+                参数 = "kami=" + StrToHex(RC4(RC4KEY, key)) + "&statecode=" + StrToHex(RC4(RC4KEY, LoginStatusCode)) + "&t=" + StrToHex(RC4(RC4KEY, 时间戳));
+                签名 = GetMD5(参数 + "&" + APPKEY);
+                URL = HeartBeatUrl + "&" + 参数 + "&s=" + StrToHex(RC4(RC4KEY, 签名));
+            } else {
+                参数 = "kami=" + key + "&statecode=" + LoginStatusCode + "&t=" + 时间戳;
+                签名 = GetMD5(参数 + "&" + APPKEY);
+                URL = HeartBeatUrl + "&" + 参数 + "&s=" + 签名;
+            }
             int result = BeatOnce(URL);
             {
                 switch (result)
                 {
                     case 1:
                         counter++;
+                        cout << "心跳验证异常抖动 (" counter << "/3)" << endl;
                         if (counter >= 3) exit(1);
                         break;
                     case -1:
+                        cout << "心跳验证失败" << endl;
                         exit(1);
                         break;
                     case 0:
@@ -491,23 +505,9 @@ namespace ET {
             }
             return false;
         }
-        string URL;
         if (Switch) {
-            string 时间戳 = TimeStamp();
-            string 参数, 签名;
-            if (请求值加密)
-            {
-                参数 = "kami=" + StrToHex(RC4(RC4KEY, key)) + "&statecode=" + StrToHex(RC4(RC4KEY, LoginStatusCode)) + "&t=" + StrToHex(RC4(RC4KEY, 时间戳));
-                签名 = GetMD5(参数 + "&" + APPKEY);
-                URL = HeartBeatUrl + "&" + 参数 + "&s=" + StrToHex(RC4(RC4KEY, 签名));
-            } else {
-                参数 = "kami=" + key + "&statecode=" + LoginStatusCode + "&t=" + 时间戳;
-                签名 = GetMD5(参数 + "&" + APPKEY);
-                URL = HeartBeatUrl + "&" + 参数 + "&s=" + 签名;
-            }
-            
             HeartbeatFlag.store(true);  // 设置子线程循环条件
-            thread heartbeatThread(HeartBeatThread, URL, ref(HeartbeatFlag));
+            thread heartbeatThread(HeartBeatThread, ref(HeartbeatFlag));
             heartbeatThread.detach(); // 将子线程放到后台运行
             return true;
         } else {
