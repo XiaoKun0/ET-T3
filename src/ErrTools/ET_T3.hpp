@@ -477,7 +477,7 @@ namespace ET {
                 {
                     case 1:
                         counter++;
-                        cout << "心跳验证异常抖动 (" counter << "/3)" << endl;
+                        cout << "心跳验证异常抖动 (" << counter << "/3)" << endl;
                         if (counter >= 3) exit(1);
                         break;
                     case -1:
